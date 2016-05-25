@@ -1,0 +1,12 @@
+div#chat_box{
+	border: 1px solid silver;
+	overflow: auto;
+	height: 500px;
+
+}
+p.chat_user_name{
+	font-weight: bold;
+}
+button#chat_hide{
+	display: none;
+}

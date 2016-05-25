@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+<head>
+	<meta charset="utf-8">
+	<title>Dungeons and Dragons</title>
+	<script src="https://code.jquery.com/jquery-2.2.3.min.js"   integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo="   crossorigin="anonymous"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+	<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/style.css">
+	<script src='https://ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.js'/></script>
+	<script src='https://ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular-route.js'/></script>
+	<script>
+		var socket = io.connect();
+		
+		var myApp = angular.module('myApp', ['ngRoute']);
+
+		myApp.config(function($routeProvider){
+			$routeProvider
+				.when('/', {
+					templateUrl: '/partials/main_chat.html'
+				})
+				.when('/toons', {
+					templateUrl: '/partials/character_selection.html'
+				})
+				.when('/chat', {
+					templateUrl: '/partials/main_chat.html'
+				})
+		})
+
+		function updateScroll(){
+			var element = document.getElementById("chat_box");
+			element.scrollTop = element.scrollHeight;
+		}
+
+		myApp.factory('UserFactory', function($http){
+			var factory = {};
+			factory.users = [];
+			factory.current_user;
+			factory.index = function(callback){
+				$http.get('/activeUsers').success(callback);
+			}
+			factory.create = function(input, callback){
+				$http.post('/users', input).success(function(output){
+					factory.current_user = output;
+					console.log('f_c_u:',factory.current_user);
+					callback(output);
+				})
+			}
+			return factory;
+		})
+
+		myApp.factory('ChatFactory', function($http){
+			var factory = {};
+			factory.chats;
+			factory.index = function(callback){
+				$http.get('/chat').success(callback);
+			}
+			factory.create = function(input, callback){
+				$http.post('/chat', input).success(callback);
+			}
+			return factory;
+		})
+
+		myApp.controller('UsersController', function(UserFactory){
+			var self = this;
+			this.users = [];
+			this.index = function(){
+				self.users = UserFactory.index(function(output){
+					self.users = output;
+					updateScroll();
+					console.log('self.users:',self.users)
+				});
+			}
+			this.create = function(input){
+				input._socket = self.socket_id;
+				UserFactory.create(input, function(data){
+					socket.emit('displayNewUser', {name: data.name});
+					self.index();
+				});
+			}
+			this.createChar = function(input){
+				if(input == 'Wizard'){
+					UserFactory.class = {}
+					UserFactory.class.name = 'Wizard';
+					UserFactory.class.str = 10;
+					UserFactory.class.dex = 15;
+					UserFactory.class.con = 14;
+					UserFactory.class.int = 16;
+					UserFactory.class.wis = 12;
+					UserFactory.class.cha = 8;
+					for(i in self.users){
+						if(self.users[i].name == UserFactory.current_user.name){
+							socket.emit('classSelected', {name: UserFactory.current_user.name, class: UserFactory.class.name});
+						}
+					}
+				}
+				if(input == "Fighter"){
+					UserFactory.class = {}
+					UserFactory.class.name = 'Fighter';
+					UserFactory.class.str = 16;
+					UserFactory.class.dex = 9;
+					UserFactory.class.con = 15;
+					UserFactory.class.int = 11;
+					UserFactory.class.wis = 13;
+					UserFactory.class.cha = 14;
+					for(i in self.users){
+						if(self.users[i].name == UserFactory.current_user.name){
+							socket.emit('classSelected', {name: UserFactory.current_user.name, class: UserFactory.class.name});
+						}
+					}
+				}
+				if(input == "Cleric"){
+					UserFactory.class = {}
+					UserFactory.class.name = 'Cleric';
+					UserFactory.class.str = 14;
+					UserFactory.class.dex = 8;
+					UserFactory.class.con = 15;
+					UserFactory.class.int = 10;
+					UserFactory.class.wis = 16;
+					UserFactory.class.cha = 12;
+					for(i in self.users){
+						if(self.users[i].name == UserFactory.current_user.name){
+							socket.emit('classSelected', {name: UserFactory.current_user.name, class: UserFactory.class.name});
+						}
+					}
+				}
+				if(input == "Rouge"){
+					UserFactory.class = {}
+					UserFactory.class.name = 'Rouge';
+					UserFactory.class.str = 8;
+					UserFactory.class.dex = 16;
+					UserFactory.class.con = 12;
+					UserFactory.class.int = 13;
+					UserFactory.class.wis = 10;
+					UserFactory.class.cha = 16;
+					for(i in self.users){
+						if(self.users[i].name == UserFactory.current_user.name){
+							socket.emit('classSelected', {name: UserFactory.current_user.name, class: UserFactory.class.name});
+						}
+					}
+				}
+			}
+			socket.on('newUser', function(data){
+				self.socket_id = data.socket;
+			})
+			socket.on('updateChat', self.index);
+			this.index();
+		})
+
+		myApp.controller('ChatsController', function(ChatFactory, UserFactory, $scope){
+			var self = this;
+			this.chats;
+			this.index = function(){
+				ChatFactory.index(function(data){
+					self.chats = data;
+					setTimeout(updateScroll, 10);
+				})
+			}
+			this.create = function(input){
+				input._user_name = UserFactory.current_user.name;
+				socket.emit('newChat', {chat: input});
+				self.newChat = {};
+			}
+			socket.on('updateChat', self.index);
+			this.index();
+		})
+	</script>
+</head>
+<body>
+	<div class="container-fluid" ng-controller="UsersController as UC">
+		<div class="row">
+			<a href="#/toons">Choose Your Adventurer</a> | <a href="#/chat">Gameroom</a>
+			<form>
+				<label>User Name <input type="text" ng-model="UC.newUser.name"></label>
+				<input type="submit" ng-click="UC.create(UC.newUser)">
+			</form>
+		</div>
+		<div class="row" ng-controller="ChatsController as CC">
+		<div class="col-md-2">
+			<div id="active_users">
+				<ul>
+					<li ng-repeat="user in UC.users">
+						<a href="#/private/{{user._id}}">{{user.name}}</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+			<div ng-view=""></div>
+		</div>
+	</div>
+</body>
+</html>

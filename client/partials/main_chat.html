@@ -1,0 +1,20 @@
+<div class="col-md-10">
+	<div id="chat_box">
+		<div ng-repeat="chat in CC.chats">
+			<div class="col-sm-2">
+				<p class="chat_user_name text-right">{{chat._user_name}} : </p>
+			</div>
+			<div class="col-sm-10">
+				<p class="chat_text">{{chat.text}}</p>
+			</div>
+		</div>
+	</div>
+	<div>
+		<form>
+			<div class="form-group">
+				<input type="text" class="form-control" ng-model="CC.newChat.text" placeholder="Type your message here...">
+			</div>
+			<button id="chat_hide" ng-click="CC.create(CC.newChat)"></button>
+		</form>
+	</div>
+</div>
